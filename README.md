@@ -11,17 +11,6 @@ The union says: "Every NPC contains storage capable of holding one of these."
 The variant says: "Every NPC contains exactly one of these alternatives, and the active alternative is tracked."
 
 
-                    NPC
-                     │
-        ┌────────────┴────────────┐
-        │                         │
-   all alternatives          one alternative
-        │                         │
- TaggedNPC              ┌─────────┴─────────┐
-                        │                   │
-                   manual union         std::variant
-
-
 
 
 # Platform config
