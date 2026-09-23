@@ -10,7 +10,10 @@ The tagged struct says: "Every NPC contains a Human, Beast, Robot and Object."
 The union says: "Every NPC contains storage capable of holding one of these."
 The variant says: "Every NPC contains exactly one of these alternatives, and the active alternative is tracked."
 
-
+** A raw union is cheap storage, but once the members are non trivial types, we becomes responsible for object lifetime.
+** lifetime/abstraction cost:
+			  	union : programmer managed
+					variant : library managed
 
 
 # Platform config
