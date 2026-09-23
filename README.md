@@ -2,7 +2,7 @@
 alternative practices worth giving a shot
 
 
-# Tagged Union vs (Tagged Struct + Switch) 
+# Tagged Union vs std::variant vs Tagged Struct 
 i saw unions in embedded code, std::variant in C++ code. both were found unreliable in hot path for low latency.
 low latency systems need deterministic and predictable code.
 
