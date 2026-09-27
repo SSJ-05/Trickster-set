@@ -12,8 +12,10 @@ The variant says: "Every NPC contains exactly one of these alternatives, and the
 
 ** A raw union is cheap storage, but once the members are non trivial types, we becomes responsible for object lifetime.
 ** lifetime/abstraction cost:
-			  	union : programmer managed
+			  		  union : programmer managed
 					variant : library managed
+** default union/variant size would be the largest object size + padding (Human object in this case) in the union
+
 
 
 # Platform config
@@ -41,9 +43,7 @@ Note: this doesn't prove smaller objects are cache friendly and therefore faster
 
 
 
-# Note: 
-The following example uses std::cout for clarity. In a production hot path, 
-you'd replace this with a non-blocking write() to a pre-allocated buffer,
-or a custom logging macro that compiles to nothing in release builds. 
-The dispatch pattern — the switch on the tag — is the key takeaway here, not the I/O.
+# Note:
+1. I use std::string_view here for clarity and zero copy semantics. In hot path we might use  const char*  for literals or a custom "PackedString" for network buffers.
+   The dispatch pattern is the point, the string type is interchangeable
 
