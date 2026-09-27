@@ -1,4 +1,4 @@
-# Trickster-set
+# Runtime Polymorphic Dispatch
 alternative practices worth giving a shot
 
 
