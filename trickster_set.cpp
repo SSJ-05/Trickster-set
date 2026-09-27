@@ -8,7 +8,6 @@
 #include <iostream>
 #include <type_traits>
 #include <new>
-#include <benchmark/benchmark.h>
 
 
 // forward decl of message types
@@ -16,6 +15,7 @@ struct Human {
 
 	std::string_view name;
 	std::string_view personality;
+	std::string_view clan;
 
 	std::uint16_t health;
 };
@@ -82,11 +82,12 @@ struct UnionNPC {
 
 	UnionNPC ( std::string_view name,
 		   std::string_view personality,
+		   std::string_view clan,
 		   std::uint16_t health ) noexcept
 		: type ( Type::Human )
 		{
 			::new ( &storage.human )
-				Human{ name, personality, health };
+				Human{ name, personality, clan, health };
 		}
 
 	~UnionNPC () noexcept 
@@ -163,129 +164,44 @@ std::uint16_t  process_npc ( const std::variant<
 }
 
 
-// NPC  make_human ( std::string_view name, std::string_view persona,
-// 		   std::uint16_t health ) {
-//
-// 	NPC npc;
-//
-// 	npc.type  =  NPC::Type::Human;
-// 	npc.human =  { name, persona, health };
-//
-// 	return npc;
-// }
-//
-//
-// NPC  make_beast ( std::string_view name, std::string_view species,
-// 		  std::uint16_t health ) {
-//
-// 	NPC npc;
-//
-// 	npc.type  =  NPC::Type::Beast;
-// 	npc.beast =  { name, species, health };
-//
-// 	return npc;
-// }
-//
-//
-// NPC  make_robot ( std::string_view name, std::string_view f_v,
-// 		  std::uint16_t battery ) {
-//
-// 	NPC npc;
-//
-// 	npc.type  =  NPC::Type::Robot;
-// 	npc.robot =  { name, f_v, battery };
-//
-// 	return npc;
-// }
-//
-//
-// NPC  make_object ( std::string_view name ) {
-//
-// 	NPC npc;
-//
-// 	npc.type   =  NPC::Type::Object;
-// 	npc.object =  { name };
-//
-// 	return npc;
-// }
 
 
-///////////////////////////////////////////////////////////////////
+int main () {
 
-static void BM_tagged_struct ( benchmark::State& state ) {
+	using VariantNPC = std::variant<Human, Beast, Robot, Object>;
 
-	TaggedNPC npc { 
-		TaggedNPC::Type::Human, { "ZeroK", "Cold", 100 }
-	};
-	for ( auto _ : state ) {
-		auto result = process_npc ( npc );
-		benchmark::DoNotOptimize( result );
-	}
+	std::cout << "\n\n";
+
+	std::cout << "\n*** Size comparison ***\n";
+	std::cout << "Tagged struct : " << sizeof( TaggedNPC ) << '\n';
+	std::cout << "Tagged union  : " << sizeof( UnionNPC ) << '\n';
+	std::cout << "Variant       : " << sizeof( VariantNPC ) << '\n';
+
+
+	std::cout << "\n*** Alignment comparison ***\n";
+	std::cout << "Tagged struct : " << alignof( TaggedNPC ) << '\n';
+	std::cout << "Tagged union  : " << alignof( UnionNPC ) << '\n';
+	std::cout << "Variant       : " << alignof( VariantNPC ) << '\n';
+
+
+
+	std::cout << "\n*** Individual Size comparison ***\n";
+	std::cout << "Human  : " << sizeof( Human ) << '\n';
+	std::cout << "Beast  : " << sizeof( Beast ) << '\n';
+	std::cout << "Robot  : " << sizeof( Robot ) << '\n';
+	std::cout << "Object : " << sizeof( Object ) << '\n';
+
+
+	std::cout << "\n*** Individual Alignment comparison ***\n";
+	std::cout << "Human  : " << alignof( Human ) << '\n';
+	std::cout << "Beast  : " << alignof( Beast ) << '\n';
+	std::cout << "Robot  : " << alignof( Robot ) << '\n';
+	std::cout << "Object : " << alignof( Object ) << '\n';
+
+
+
+
+
+	std::cout << "\n\n";
+	return EXIT_SUCCESS;
 }
-
-
-static void BM_union ( benchmark::State& state ) {
-
-	UnionNPC npc { "ZeroK", "Cold", 100 };
-	for ( auto _ : state ) {
-		auto result = process_npc ( npc );
-		benchmark::DoNotOptimize( result );
-	}
-}
-
-static void BM_variant ( benchmark::State& state ) {
-
-	std::variant<Human, Beast, Robot, Object> npc = 
-		Human{ "ZeroK", "Cold", 100 };
-	for ( auto _ : state ) {
-		auto result = process_npc ( npc );
-		benchmark::DoNotOptimize( result );
-	}
-}
-
-
-BENCHMARK ( BM_tagged_struct );
-BENCHMARK ( BM_union );
-BENCHMARK ( BM_variant );
-
-BENCHMARK_MAIN ();
-
-// int main () {
-//
-// 	using VariantNPC = std::variant<Human, Beast, Robot, Object>;
-//
-// 	std::cout << "\n\n";
-//
-// 	std::cout << "\n*** Size comparison ***\n";
-// 	std::cout << "Tagged struct : " << sizeof( TaggedNPC ) << '\n';
-// 	std::cout << "Tagged union  : " << sizeof( UnionNPC ) << '\n';
-// 	std::cout << "Variant       : " << sizeof( VariantNPC ) << '\n';
-//
-//
-// 	std::cout << "\n*** Alignment comparison ***\n";
-// 	std::cout << "Tagged struct : " << alignof( TaggedNPC ) << '\n';
-// 	std::cout << "Tagged union  : " << alignof( UnionNPC ) << '\n';
-// 	std::cout << "Variant       : " << alignof( VariantNPC ) << '\n';
-//
-//
-//
-// 	std::cout << "\n*** Individual Size comparison ***\n";
-// 	std::cout << "Human  : " << sizeof( Human ) << '\n';
-// 	std::cout << "Beast  : " << sizeof( Beast ) << '\n';
-// 	std::cout << "Robot  : " << sizeof( Robot ) << '\n';
-// 	std::cout << "Object : " << sizeof( Object ) << '\n';
-//
-//
-// 	std::cout << "\n*** Individual Alignment comparison ***\n";
-// 	std::cout << "Human  : " << alignof( Human ) << '\n';
-// 	std::cout << "Beast  : " << alignof( Beast ) << '\n';
-// 	std::cout << "Robot  : " << alignof( Robot ) << '\n';
-// 	std::cout << "Object : " << alignof( Object ) << '\n';
-//
-//
-//
-//
-//
-// 	std::cout << "\n\n";
-// 	return EXIT_SUCCESS;
-// }
