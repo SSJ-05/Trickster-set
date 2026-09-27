@@ -147,17 +147,17 @@ std::uint16_t  process_npc ( const std::variant<
 
 				if constexpr ( std::is_same_v<
 					std::decay_t<decltype(x)>, Human> ) {
-						return x.health;
+						return  x.health;
 				}
 				else if constexpr ( std::is_same_v<
 					std::decay_t<decltype(x)>, Beast> ) {
-						return x.health;
+						return  x.health;
 				}
 				else if constexpr ( std::is_same_v<
 					std::decay_t<decltype(x)>, Robot> ) {
-						return x.battery;
+						return  x.battery;
 				}
-				else return x.canInteract;
+				else return  x.canInteract;
 
 			}, npc );
 }
