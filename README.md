@@ -15,6 +15,7 @@ alternative practices worth giving a shot
 			  		  union : programmer managed
 					variant : library managed
 - default union/variant size would be the largest object size + padding (Human object in this case) in the union
+- # after careful observation of asm, every read from tagged struct needs to pull a 168 byte object, while variant only pulls 64 byte
 
 
 
