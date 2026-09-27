@@ -15,7 +15,7 @@ alternative practices worth giving a shot
 			  		  union : programmer managed
 					variant : library managed
 - default union/variant size would be the largest object size + padding (Human object in this case) in the union
-- # after careful observation of asm, every read from tagged struct needs to pull a 168 byte object, while variant only pulls 64 byte
+- after careful observation of asm, every read from tagged struct needs to pull a 168 byte object, while variant only pulls 64 byte
 
 
 
@@ -48,3 +48,5 @@ Observations:
 1. I use std::string_view here for clarity and zero copy semantics. In hot path we might use  const char*  for literals or a custom "PackedString" for network buffers.
    The dispatch pattern is the point, the string type is interchangeable
 
+# Conclusion:
+I initially expected the comparison to reveal a significant dispatch-cost difference between a manually tagged representation and std::variant. The generated assembly showed that both compile into straightforward discriminator-based dispatch. Under the chosen heterogeneous workload, the dominant observable difference was representation size: the tagged representation occupied 168 bytes while the variant occupied 64 bytes, resulting in substantially different traversal footprints. This experiment therefore demonstrates that representation and memory locality can matter more than the surface-level abstraction used to express runtime polymorphism
