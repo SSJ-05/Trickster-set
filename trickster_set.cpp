@@ -164,40 +164,161 @@ std::uint16_t  process_npc ( const std::variant<
 }
 
 
+//////////////////////////////////////////////////////////////////////
+
+// tagged struct vs std::variant
+
+// tagged struct
+template <typename T>
+struct PtrState {
+		
+	enum class State : std::uint8_t { None, Null, Valid };
+	State state;
+	T* ptr;
+
+	// ptr occupies 8 bytes in every state
+	// factory funcs below will enforce this invariant
+	static PtrState none ()  noexcept { return {State::None, nullptr}; }
+	static PtrState null ()  noexcept { return {State::Null, nullptr}; }
+	static PtrState valid ( T* ptr ) noexcept { return {State::Valid, ptr}; }
+};
+
+
+// switch case
+template <typename T>
+[[ nodiscard ]]
+T* process_ptr_state ( const PtrState<T>& ps ) noexcept {
+
+	switch ( ps.state ) {
+
+		case PtrState<T>::State::None   : return nullptr;
+		case PtrState<T>::State::Null   : return nullptr;
+		case PtrState<T>::State::Valid 	: return ps.ptr;
+	}
+
+	return nullptr;
+}
+
+/*************************************************************************/
+
+// std::variant
+// overloaded helper
+template <class... Ts>
+struct overloaded : Ts... { using Ts::operator()...; };
+// deduction guide (not needed in C++20+ due to CTAD)
+// template <class... Ts>
+// overloaded ( Ts... ) -> overloaded<Ts...>;
+
+template <typename T>
+using VariantPtr = std::variant<std::monostate, std::nullptr_t, T*>;
+//				   None^^	   Null^^	Valid^
+template <typename T>
+[[ nodiscard ]]
+T* process_variant_ptr ( const VariantPtr<T>& vp ) noexcept {
+
+	return  std::visit ( overloaded {
+			[] ( T* p ) 	   -> T* { return p; },
+			[] ( const auto& ) -> T* { return nullptr; }
+		}, vp );
+
+}
+
 
 
 int main () {
 
-	using VariantNPC = std::variant<Human, Beast, Robot, Object>;
+	// using VariantNPC = std::variant<Human, Beast, Robot, Object>;
 
 	std::cout << "\n\n";
 
-	std::cout << "\n*** Size comparison ***\n";
-	std::cout << "Tagged struct : " << sizeof( TaggedNPC ) << '\n';
-	std::cout << "Tagged union  : " << sizeof( UnionNPC ) << '\n';
-	std::cout << "Variant       : " << sizeof( VariantNPC ) << '\n';
+	// std::cout << "\n*** Size comparison ***\n";
+	// std::cout << "Tagged struct : " << sizeof( TaggedNPC ) << '\n';
+	// std::cout << "Tagged union  : " << sizeof( UnionNPC ) << '\n';
+	// std::cout << "Variant       : " << sizeof( VariantNPC ) << '\n';
+	//
+	//
+	// std::cout << "\n*** Alignment comparison ***\n";
+	// std::cout << "Tagged struct : " << alignof( TaggedNPC ) << '\n';
+	// std::cout << "Tagged union  : " << alignof( UnionNPC ) << '\n';
+	// std::cout << "Variant       : " << alignof( VariantNPC ) << '\n';
+	//
+	//
+	//
+	// std::cout << "\n*** Individual Size comparison ***\n";
+	// std::cout << "Human  : " << sizeof( Human ) << '\n';
+	// std::cout << "Beast  : " << sizeof( Beast ) << '\n';
+	// std::cout << "Robot  : " << sizeof( Robot ) << '\n';
+	// std::cout << "Object : " << sizeof( Object ) << '\n';
+	//
+	//
+	// std::cout << "\n*** Individual Alignment comparison ***\n";
+	// std::cout << "Human  : " << alignof( Human ) << '\n';
+	// std::cout << "Beast  : " << alignof( Beast ) << '\n';
+	// std::cout << "Robot  : " << alignof( Robot ) << '\n';
+	// std::cout << "Object : " << alignof( Object ) << '\n';
 
 
-	std::cout << "\n*** Alignment comparison ***\n";
-	std::cout << "Tagged struct : " << alignof( TaggedNPC ) << '\n';
-	std::cout << "Tagged union  : " << alignof( UnionNPC ) << '\n';
-	std::cout << "Variant       : " << alignof( VariantNPC ) << '\n';
+
+	// std::cout << "size compare\n";
+	// std::cout << "tagged struct : " << sizeof( PtrState<int*> ) << '\n';
+	// std::cout << "variant : " << sizeof( VariantPtr<int*> ) << '\n';
+	//
+	//
+	// std::cout << "\nalignment compare\n";
+	// std::cout << "tagged struct : " << alignof( PtrState<int*> ) << '\n';
+	// std::cout << "variant : " << alignof( VariantPtr<int*> ) << '\n';
 
 
+	int value { 42 };
 
-	std::cout << "\n*** Individual Size comparison ***\n";
-	std::cout << "Human  : " << sizeof( Human ) << '\n';
-	std::cout << "Beast  : " << sizeof( Beast ) << '\n';
-	std::cout << "Robot  : " << sizeof( Robot ) << '\n';
-	std::cout << "Object : " << sizeof( Object ) << '\n';
+	// Tagged Struct
+	PtrState<int> none 	=	PtrState<int>::none();
+	PtrState<int> null 	=	PtrState<int>::null();
+	PtrState<int> valid 	=	PtrState<int>::valid( &value );
+
+	// auto result1 { *process_ptr_state( valid ) };
+	// std::cout << result1;
+
+	std::cout << "\n=== PtrState ===\n";
+	std::cout << "None : " << 
+		( process_ptr_state( none ) ? "ptr" : "nullptr" ) << '\n';
+	std::cout << "Null : " << 
+		( process_ptr_state( null ) ? "ptr" : "nullptr" ) << '\n';
+	std::cout << "Valid : " << 
+		( process_ptr_state( valid ) ? *process_ptr_state( valid )
+		  			     : 0 ) << '\n';
 
 
-	std::cout << "\n*** Individual Alignment comparison ***\n";
-	std::cout << "Human  : " << alignof( Human ) << '\n';
-	std::cout << "Beast  : " << alignof( Beast ) << '\n';
-	std::cout << "Robot  : " << alignof( Robot ) << '\n';
-	std::cout << "Object : " << alignof( Object ) << '\n';
+	// std::variant
+	VariantPtr<int> v_none	  =	std::monostate{};
+	VariantPtr<int> v_null	  =	nullptr;
+	VariantPtr<int> v_valid	  =	&value;
 
+	// auto result2 { *process_variant_ptr( v_valid ) };
+	// std::cout << result2;
+
+	std::cout << "\n=== Variant ===\n";
+	std::cout << "None : " << 
+		( process_variant_ptr( v_none ) ? "ptr" : "nullptr" ) << '\n';
+	std::cout << "Null : " << 
+		( process_variant_ptr( v_null ) ? "ptr" : "nullptr" ) << '\n';
+	std::cout << "Valid : " << 
+		( process_variant_ptr( v_valid ) ? *process_variant_ptr( v_valid )
+		  			         : 0 ) << '\n';
+
+
+	/* std::variant is a type safe discriminated union. 
+	 * It is a form of closed set runtime polymorphism, not classical virtual OOP.
+	 * Its abstraction cost must be evaluated from the generated code 
+	 * and data representation, not from the syntax alone.
+	 *
+	 * PtrState<T> and std::variant<std::monostate, std::nullptr_t, T*> 
+	 * both occupy 16 bytes on this implementation. 
+	 * The variant therefore gives stronger type level representation
+	 * of the alternatives without providing a storage density advantage here.
+	 *
+	 * NOTE: C++26 std::optional<T&> - 'maybe reference' solves this problem
+	 * */
 
 
 
